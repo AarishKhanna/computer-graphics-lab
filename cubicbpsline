@@ -1,0 +1,194 @@
+import math
+from graphics import *
+from collections import defaultdict as dd
+import sys
+import random
+sys.setrecursionlimit(2*10**8)
+
+
+class ViewPort:
+    def __init__(self, xVmin, yVmin, xVmax, yVmax):
+        self.xVmin, self.yVmin, self.xVmax, self.yVmax = xVmin, yVmin, xVmax, yVmax
+
+    def __repr__(self):
+        return 'ViewPort(%s, %s, %s, %s)' % (self.xVmin, self.yVmin, self.xVmax, self.yVmax)
+
+    def init_view(self):
+
+        win = GraphWin('Output Window', 800, 800)
+        win.setBackground("white")
+        win.setCoords(self.xVmin, self.yVmin, self.xVmax, self.yVmax)
+        t = Text(Point(0, 0), '(0,0)')
+        t.setSize(8)
+        t.draw(win)
+        t = Text(Point(self.xVmax, self.yVmax),
+                 '('+str(self.xVmax)+str(self.yVmax)+')')
+        t.setSize(8)
+        t.draw(win)
+        L1 = Line(Point(self.xVmin, 0), Point(self.xVmax, 0))
+        L2 = Line(Point(0, self.yVmin), Point(0, self.yVmax))
+        L1.setFill('blue')
+        L2.setFill('blue')
+        L1.setArrow("last")
+        L2.setArrow("last")
+        L1.draw(win)
+        L2.draw(win)
+        return win
+
+
+class Window:
+    def __init__(self, xwmin, ywmin, xwmax, ywmax):
+        self.xwmin, self.ywmin, self.xwmax, self.ywmax = xwmin, ywmin, xwmax, ywmax
+
+    def __repr__(self):
+        return 'Window(%s, %s, %s, %s)' % (self.xwmin, self.ywmin, self.xwmax, self.ywmax)
+
+    def map_to(self, x_win, y_win, ViewPort):
+        x_view = (x_win-self.xwmin)*(ViewPort.xVmax - ViewPort.xVmin) / \
+            (self.xwmax-self.xwmin) + ViewPort.xVmin
+        y_view = (y_win-self.ywmin)*(ViewPort.yVmax - ViewPort.yVmin) / \
+            (self.ywmax-self.ywmin) + ViewPort.yVmin
+        return int(x_view), int(y_view)
+
+
+def drawAxis(win, new_view):
+    L1 = Line(Point(new_view.xVmin, 0), Point(new_view.xVmax, 0))
+    L2 = Line(Point(0, new_view.yVmin), Point(0, new_view.yVmax))
+    L1.setFill('blue')
+    L2.setFill('blue')
+    L1.draw(win)
+    L2.draw(win)
+    return win
+
+
+def bresenham(x0, y0, x1, y1):
+    dx = x1 - x0
+    dy = y1 - y0
+
+    xsign = 1 if dx > 0 else -1
+    ysign = 1 if dy > 0 else -1
+
+    dx = abs(dx)
+    dy = abs(dy)
+
+    if dx > dy:
+        xx, xy, yx, yy = xsign, 0, 0, ysign
+    else:
+        dx, dy = dy, dx
+        xx, xy, yx, yy = 0, ysign, xsign, 0
+
+    D = 2*dy - dx
+    y = 0
+    pixel = []
+    for x in range(dx + 1):
+        pixel.append((x0 + x*xx + y*yx, y0 + x*xy + y*yy))
+        if D >= 0:
+            y += 1
+            D -= 2*dx
+        D += 2*dy
+    return pixel
+
+
+new_view = ViewPort(-400, -400, 400, 400)
+win = new_view.init_view()
+
+
+def universal():
+    points3 = []
+    points4 = []
+    Total_points = 6
+
+    def B0(u):
+        return float(pow(1-u, 3) / 6.0)
+
+    def B1(u):
+        return float((3 * pow(u, 3) - 6 * pow(u, 2) + 4) / 6.0)
+
+    def B2(u):
+        return float((-3 * pow(u, 3) + 3 * pow(u, 2) + 3 * u + 1) / 6.0)
+
+    def B3(u):
+        return float(pow(u, 3) / 6.0)
+
+    def calcbspline(x, y):
+        Max_Steps = 100
+        count = 0
+        for i in range(Total_points-3):
+            for j in range(Max_Steps+1):
+                u = j / Max_Steps
+                Qx = B0(u) * x[i] + B1(u) * x[i + 1] + \
+                    B2(u) * x[i + 2] + B3(u) * x[i + 3]
+                Qy = B0(u) * y[i] + B1(u) * y[i + 1] + \
+                    B2(u) * y[i + 2] + B3(u) * y[i + 3]
+                points3[count] = Qx
+                points4[count] = Qy
+                count = count+1
+
+    def getpoints():
+        points1 = []
+        points2 = []
+        p1 = win.getMouse()
+        p1.draw(win)
+        t = Text(p1, 'P1')
+        t.draw(win)
+        p2 = win.getMouse()
+        e = Text(p2, 'P2')
+        e.draw(win)
+        p2.draw(win)
+        p3 = win.getMouse()
+        r = Text(p3, 'P3')
+        r.draw(win)
+        p3.draw(win)
+        p4 = win.getMouse()
+        u = Text(p4, 'P4')
+        u.draw(win)
+        p4.draw(win)
+        p5 = win.getMouse()
+        p5.draw(win)
+        p6 = win.getMouse()
+        p6.draw(win)
+
+        ax = int(p1.x)
+        ay = int(p1.y)
+        bx = int(p2.x)
+        by = int(p2.y)
+        cx = int(p3.x)
+        cy = int(p3.y)
+        ex = int(p4.x)
+        ey = int(p4.y)
+        sx = int(p5.x)
+        sy = int(p5.y)
+        fx = int(p6.x)
+        fy = int(p6.y)
+
+        points1.append((ax))
+        points1.append((bx))
+        points1.append((cx))
+        points1.append((ex))
+        points1.append((sx))
+        points1.append((fx))
+        points2.append((ay))
+        points2.append((by))
+        points2.append((cy))
+        points2.append((ey))
+        points2.append((sy))
+        points2.append((fy))
+        return points1, points2
+
+    def Draw(x, y):
+
+        for i in range(len(x)-1):
+            qq = Line(Point(x[i], y[i]), Point(x[i+1], y[i+1]))
+            qq.setOutline('blue')
+            qq.draw(win)
+
+        return
+
+    x, y = getpoints()
+    calcbspline(x, y)
+    Draw(points3, points4)
+
+
+universal()
+win.getMouse()
+win.close()
